@@ -174,7 +174,59 @@ const CommissionersCup = () => {
   };
 
   const Standings = () => {
-    return <div className="text-center text-gray-600">Standings coming soon...</div>;
+    const groupNames = ['A', 'B', 'C', 'D'];
+    
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold mb-6">Group Standings</h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {groupNames.map(groupName => {
+            const standings = data.groupStandings
+              .filter(s => s.col0 === groupName && s.col1 !== null)
+              .sort((a, b) => toNumber(a.col6) - toNumber(b.col6));
+            
+            return (
+              <div key={groupName} className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4">
+                  <h2 className="text-2xl font-bold text-white">Group {groupName}</h2>
+                </div>
+                <div className="p-4">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2">Rank</th>
+                        <th className="text-left py-2">Team</th>
+                        <th className="text-center py-2">W</th>
+                        <th className="text-center py-2">L</th>
+                        <th className="text-center py-2">PF</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {standings.map((team, idx) => {
+                        const qualifying = idx < 4;
+                        return (
+                          <tr key={idx} className={`border-b ${qualifying ? 'bg-green-50' : ''}`}>
+                            <td className="py-2 px-2 font-bold">{team.col6}</td>
+                            <td className="py-2">
+                              <p className="font-semibold">{getTeamName(team.col1)}</p>
+                              <p className="text-xs text-gray-500">{getTeamOwner(team.col1)}</p>
+                            </td>
+                            <td className="text-center py-2">{team.col2}</td>
+                            <td className="text-center py-2">{team.col3}</td>
+                            <td className="text-center py-2">{formatScore(team.col4)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   const Matchups = () => {
