@@ -438,72 +438,110 @@ const CommissionersCup = () => {
           </div>
         </div>
 
-        {currentGPWeek && Object.keys(matchupsByGroup).length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold mb-4">
-              This Week's Matchups - Group Play Week {currentGPWeek}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.entries(matchupsByGroup).sort().map(([group, matchups]) => (
-                <div key={group} className="border-2 border-gray-200 rounded-lg overflow-hidden">
-                  <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
-                    <h3 className="text-lg font-bold text-center">Group {group}</h3>
-                  </div>
-                  <div className="p-3">
-                    {matchups.map((matchup, idx) => {
-                      const homeTeam = getTeamName(matchup.col6);
-                      const awayTeam = getTeamName(matchup.col7);
-                      const homeScore = toNumber(matchup.col8);
-                      const awayScore = toNumber(matchup.col9);
-                      const hasScores = homeScore > 0 || awayScore > 0;
-                      const winner = matchup.col10;
-                      
-                      return (
-                        <div key={idx} className={idx < matchups.length - 1 ? "mb-3" : ""}>
-                          <div className={`flex justify-between items-center p-2 rounded-t ${winner === matchup.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
-                            <span className="text-sm">{homeTeam}</span>
-                            <span className="text-lg font-bold">
-                              {hasScores ? formatScore(homeScore) : '-'}
-                            </span>
-                          </div>
-                          <div className={`flex justify-between items-center p-2 rounded-b border-t ${winner === matchup.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
-                            <span className="text-sm">{awayTeam}</span>
-                            <span className="text-lg font-bold">
-                              {hasScores ? formatScore(awayScore) : '-'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {liveGames.length > 0 && (
+        {currentWeekMatchups.length > 0 && (
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-2xl font-bold mb-4 flex items-center">
               <Clock className="mr-2 text-red-500" />
-              Live Scores
+              This Week's Matchups - Live Scoring
             </h2>
-            <div className="space-y-3">
-              {liveGames.map((game, i) => (
-                <div key={i} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <div className="flex-1">
-                    <p className="font-semibold">{getTeamName(game.col6)}</p>
-                    <p className="text-sm text-gray-500">{getTeamOwner(game.col6)}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {currentWeekMatchups.map((matchup, i) => {
+                const homeTeamId = matchup.col6;
+                const awayTeamId = matchup.col7;
+                const homeScore = toNumber(matchup.col8);
+                const awayScore = toNumber(matchup.col9);
+                const winner = matchup.col10;
+                
+                // Get live scoring data for both teams
+                const homeLive = data.liveScoring.find(ls => ls.col6 === homeTeamId);
+                const awayLive = data.liveScoring.find(ls => ls.col6 === awayTeamId);
+                
+                const homeLiveScore = homeLive ? toNumber(homeLive.col2) : homeScore;
+                const awayLiveScore = awayLive ? toNumber(awayLive.col2) : awayScore;
+                
+                const homeYetToPlay = homeLive ? toNumber(homeLive.col4) : 0;
+                const awayYetToPlay = awayLive ? toNumber(awayLive.col4) : 0;
+                
+                const homePlaying = homeLive ? toNumber(homeLive.col5) : 0;
+                const awayPlaying = awayLive ? toNumber(awayLive.col5) : 0;
+                
+                const homeSecondsLeft = homeLive ? toNumber(homeLive.col3) : 0;
+                const awaySecondsLeft = awayLive ? toNumber(awayLive.col3) : 0;
+                
+                const isLive = homePlaying > 0 || awayPlaying > 0 || homeYetToPlay > 0 || awayYetToPlay > 0;
+                const isComplete = winner !== null && winner !== '';
+                
+                return (
+                  <div key={i} className={`border-2 rounded-lg overflow-hidden ${isLive ? 'border-red-400 shadow-lg' : 'border-gray-300'}`}>
+                    {isLive && (
+                      <div className="bg-red-500 text-white text-center py-1 text-sm font-bold">
+                        🔴 LIVE
+                      </div>
+                    )}
+                    {isComplete && (
+                      <div className="bg-green-500 text-white text-center py-1 text-sm font-bold">
+                        ✓ FINAL
+                      </div>
+                    )}
+                    
+                    {/* Home Team */}
+                    <div className={`p-4 ${winner === homeTeamId ? 'bg-green-50' : 'bg-gray-50'} border-b`}>
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <p className={`font-bold text-lg ${winner === homeTeamId ? 'text-green-700' : 'text-gray-800'}`}>
+                            {getTeamName(homeTeamId)}
+                          </p>
+                          <p className="text-sm text-gray-600">{getTeamOwner(homeTeamId)}</p>
+                          <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                            {homePlaying > 0 && (
+                              <span className="text-green-600 font-semibold">⚡ {homePlaying} playing</span>
+                            )}
+                            {homeYetToPlay > 0 && (
+                              <span>📋 {homeYetToPlay} yet to play</span>
+                            )}
+                            {homeSecondsLeft > 0 && (
+                              <span>⏱️ {Math.floor(homeSecondsLeft / 60)}m left</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className={`text-3xl font-bold ${winner === homeTeamId ? 'text-green-600' : 'text-blue-600'}`}>
+                            {homeLiveScore > 0 ? formatScore(homeLiveScore) : '-'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Away Team */}
+                    <div className={`p-4 ${winner === awayTeamId ? 'bg-green-50' : 'bg-white'}`}>
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <p className={`font-bold text-lg ${winner === awayTeamId ? 'text-green-700' : 'text-gray-800'}`}>
+                            {getTeamName(awayTeamId)}
+                          </p>
+                          <p className="text-sm text-gray-600">{getTeamOwner(awayTeamId)}</p>
+                          <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                            {awayPlaying > 0 && (
+                              <span className="text-green-600 font-semibold">⚡ {awayPlaying} playing</span>
+                            )}
+                            {awayYetToPlay > 0 && (
+                              <span>📋 {awayYetToPlay} yet to play</span>
+                            )}
+                            {awaySecondsLeft > 0 && (
+                              <span>⏱️ {Math.floor(awaySecondsLeft / 60)}m left</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className={`text-3xl font-bold ${winner === awayTeamId ? 'text-green-600' : 'text-blue-600'}`}>
+                            {awayLiveScore > 0 ? formatScore(awayLiveScore) : '-'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-blue-600 mx-4">
-                    {formatScore(game.col2)}
-                  </div>
-                  <div className="text-right text-sm text-gray-500">
-                    <p>{toNumber(game.col4)} yet to play</p>
-                    <p>{toNumber(game.col5)} playing</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
