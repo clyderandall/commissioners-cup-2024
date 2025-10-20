@@ -89,7 +89,8 @@ const CommissionersCup = () => {
   };
 
   const Dashboard = () => {
-    const currentNFLWeek = data.config.length > 2 ? toNumber(data.config[2].col1) : 10;
+    const configRow = data.config.find(row => row.col0 === 'Current NFL Week');
+    const currentNFLWeek = configRow ? toNumber(configRow.col1) : 10;
     const currentGPWeek = currentNFLWeek >= 9 && currentNFLWeek <= 13 ? currentNFLWeek - 8 : null;
     const phase = currentNFLWeek < 9 ? 'Pre-Tournament' : currentNFLWeek <= 13 ? 'Group Stage' : 'Elimination Bracket';
     const liveGames = data.liveScoring.filter(game => toNumber(game.col2) > 0);
@@ -230,7 +231,7 @@ const CommissionersCup = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {groupNames.map(groupName => {
             const standings = data.groupStandings
-              .filter(s => s.col0 === groupName)
+              .filter(s => s.col0 === groupName && s.col1 !== null)
               .sort((a, b) => toNumber(a.col6) - toNumber(b.col6));
             
             return (
@@ -252,6 +253,8 @@ const CommissionersCup = () => {
                     <tbody>
                       {standings.map((team, idx) => {
                         const qualifying = idx < 4;
+                        const wins = team.col2;
+                        const losses = team.col3;
                         return (
                           <tr key={idx} className={`border-b ${qualifying ? 'bg-green-50' : ''}`}>
                             <td className="py-2 px-2 font-bold">{team.col6}</td>
@@ -259,8 +262,8 @@ const CommissionersCup = () => {
                               <p className="font-semibold">{getTeamName(team.col1)}</p>
                               <p className="text-xs text-gray-500">{getTeamOwner(team.col1)}</p>
                             </td>
-                            <td className="text-center py-2">{team.col2}</td>
-                            <td className="text-center py-2">{team.col3}</td>
+                            <td className="text-center py-2">{wins}</td>
+                            <td className="text-center py-2">{losses}</td>
                             <td className="text-center py-2">{formatScore(team.col4)}</td>
                           </tr>
                         );
@@ -278,7 +281,8 @@ const CommissionersCup = () => {
 
   const Matchups = () => {
     const gpWeeks = [1, 2, 3, 4, 5];
-    const currentNFLWeek = data.config.length > 2 ? toNumber(data.config[2].col1) : 10;
+    const configRow = data.config.find(row => row.col0 === 'Current NFL Week');
+    const currentNFLWeek = configRow ? toNumber(configRow.col1) : 10;
     const currentGPWeek = currentNFLWeek >= 9 && currentNFLWeek <= 13 ? currentNFLWeek - 8 : null;
     
     return (
@@ -356,11 +360,18 @@ const CommissionersCup = () => {
   };
 
   const Bracket = () => {
+    const roundNames = {
+      1: 'Sweet 16',
+      2: 'Elite 8',
+      3: 'Final 4',
+      4: 'Championship'
+    };
+    
     const rounds = {
-      'Sweet 16': data.bracketMatchups.filter(m => m.col0 === 'Sweet 16'),
-      'Elite 8': data.bracketMatchups.filter(m => m.col0 === 'Elite 8'),
-      'Final 4': data.bracketMatchups.filter(m => m.col0 === 'Final 4'),
-      'Championship': data.bracketMatchups.filter(m => m.col0 === 'Championship')
+      'Sweet 16': data.bracketMatchups.filter(m => toNumber(m.col0) === 1),
+      'Elite 8': data.bracketMatchups.filter(m => toNumber(m.col0) === 2),
+      'Final 4': data.bracketMatchups.filter(m => toNumber(m.col0) === 3),
+      'Championship': data.bracketMatchups.filter(m => toNumber(m.col0) === 4)
     };
 
     return (
@@ -369,28 +380,31 @@ const CommissionersCup = () => {
         
         <div className="bg-white rounded-lg shadow p-6 overflow-x-auto">
           <div className="flex gap-8" style={{ minWidth: 'max-content' }}>
-            {Object.entries(rounds).map(([roundName, matches]) => (
-              <div key={roundName} className="flex-1" style={{ minWidth: '250px' }}>
-                <h3 className="text-xl font-bold mb-4 text-center text-purple-600">{roundName}</h3>
-                <div className="space-y-6">
-                  {matches.map((match, idx) => (
-                    <div key={idx} className="border-2 border-gray-300 rounded-lg overflow-hidden">
-                      <div className={`p-3 flex justify-between items-center ${match.col10 === match.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
-                        <span className="text-sm text-gray-600">{match.col4}</span>
-                        <span>{getTeamName(match.col6)}</span>
-                        <span className="font-bold">{match.col8 ? formatScore(match.col8) : '-'}</span>
+            {Object.entries(rounds).map(([roundName, matches]) => {
+              if (matches.length === 0) return null;
+              return (
+                <div key={roundName} className="flex-1" style={{ minWidth: '250px' }}>
+                  <h3 className="text-xl font-bold mb-4 text-center text-purple-600">{roundName}</h3>
+                  <div className="space-y-6">
+                    {matches.map((match, idx) => (
+                      <div key={idx} className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                        <div className={`p-3 flex justify-between items-center ${match.col10 === match.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                          <span className="text-sm text-gray-600">{match.col4}</span>
+                          <span className="flex-1 mx-2">{getTeamName(match.col6)}</span>
+                          <span className="font-bold">{match.col8 ? formatScore(match.col8) : '-'}</span>
+                        </div>
+                        <div className="border-t-2"></div>
+                        <div className={`p-3 flex justify-between items-center ${match.col10 === match.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                          <span className="text-sm text-gray-600">{match.col5}</span>
+                          <span className="flex-1 mx-2">{getTeamName(match.col7)}</span>
+                          <span className="font-bold">{match.col9 ? formatScore(match.col9) : '-'}</span>
+                        </div>
                       </div>
-                      <div className="border-t-2"></div>
-                      <div className={`p-3 flex justify-between items-center ${match.col10 === match.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
-                        <span className="text-sm text-gray-600">{match.col5}</span>
-                        <span>{getTeamName(match.col7)}</span>
-                        <span className="font-bold">{match.col9 ? formatScore(match.col9) : '-'}</span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
