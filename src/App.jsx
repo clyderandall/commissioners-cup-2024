@@ -84,6 +84,111 @@ const CommissionersCup = () => {
     return team ? team.col3 : 'Unknown';
   };
 
+  const Dashboard = () => {
+    const configRow = data.config.find(row => row.col0 === 'Current NFL Week');
+    const currentNFLWeek = configRow ? toNumber(configRow.col1) : 10;
+    const currentGPWeek = currentNFLWeek >= 9 && currentNFLWeek <= 13 ? currentNFLWeek - 8 : null;
+    
+    let phase = 'Pre-Tournament';
+    let phaseDetail = 'Awaiting Start';
+    
+    if (currentNFLWeek >= 9 && currentNFLWeek <= 13) {
+      phase = 'Group Stage';
+      phaseDetail = `Week ${currentGPWeek} of 5`;
+    } else if (currentNFLWeek === 14) {
+      phase = 'Sweet 16';
+      phaseDetail = 'Round 1';
+    } else if (currentNFLWeek === 15) {
+      phase = 'Elite 8';
+      phaseDetail = 'Quarterfinals';
+    } else if (currentNFLWeek === 16) {
+      phase = 'Final 4';
+      phaseDetail = 'Semifinals';
+    } else if (currentNFLWeek === 17) {
+      phase = 'Championship';
+      phaseDetail = 'Final';
+    } else if (currentNFLWeek > 17) {
+      phase = 'Complete';
+      phaseDetail = 'Season Ended';
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Commissioner's Cup 2024</h1>
+              <p className="text-xl opacity-90">NFL Week {currentNFLWeek}</p>
+            </div>
+            <img src="https://iili.io/3wiyhl.png" alt="CC Logo" className="h-24 w-24 object-contain" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Current Phase</p>
+                <p className="text-2xl font-bold text-purple-600">{phase}</p>
+                <p className="text-sm text-gray-600">{phaseDetail}</p>
+              </div>
+              <Target className="h-12 w-12 text-purple-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Teams Remaining</p>
+                <p className="text-3xl font-bold text-blue-600">24</p>
+                <p className="text-sm text-gray-600">of 24 total</p>
+              </div>
+              <Users className="h-12 w-12 text-blue-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Matchups Complete</p>
+                <p className="text-3xl font-bold text-green-600">0/12</p>
+                <p className="text-sm text-gray-600">this week</p>
+              </div>
+              <BarChart3 className="h-12 w-12 text-green-500" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Prize Pool</p>
+                <p className="text-3xl font-bold text-green-600">$600</p>
+                <p className="text-sm text-gray-600">24 x $25</p>
+              </div>
+              <Trophy className="h-12 w-12 text-yellow-500" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const Standings = () => {
+    return <div className="text-center text-gray-600">Standings coming soon...</div>;
+  };
+
+  const Matchups = () => {
+    return <div className="text-center text-gray-600">Matchups coming soon...</div>;
+  };
+
+  const Bracket = () => {
+    return <div className="text-center text-gray-600">Bracket coming soon...</div>;
+  };
+
+  const Teams = () => {
+    return <div className="text-center text-gray-600">Teams coming soon...</div>;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -129,13 +234,11 @@ const CommissionersCup = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-3xl font-bold mb-4">Commissioner's Cup 2024</h1>
-          <p className="text-gray-600">Active Tab: {activeTab}</p>
-          <p className="text-sm text-gray-500 mt-4">
-            Data loaded: {data.franchises.length} teams, {data.groupStandings.length} standings entries
-          </p>
-        </div>
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'standings' && <Standings />}
+        {activeTab === 'matchups' && <Matchups />}
+        {activeTab === 'bracket' && <Bracket />}
+        {activeTab === 'teams' && <Teams />}
         
         {lastUpdate && (
           <div className="mt-8 text-center text-sm text-gray-500">
