@@ -220,132 +220,137 @@ const CommissionersCup = () => {
     );
   };
 
-  const Groups = () => {
+  const Standings = () => {
     const groupNames = ['A', 'B', 'C', 'D'];
+    
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold mb-6">Group Standings</h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {groupNames.map(groupName => {
+            const standings = data.groupStandings
+              .filter(s => s.col0 === groupName)
+              .sort((a, b) => toNumber(a.col6) - toNumber(b.col6));
+            
+            return (
+              <div key={groupName} className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4">
+                  <h2 className="text-2xl font-bold text-white">Group {groupName}</h2>
+                </div>
+                <div className="p-4">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2">Rank</th>
+                        <th className="text-left py-2">Team</th>
+                        <th className="text-center py-2">W</th>
+                        <th className="text-center py-2">L</th>
+                        <th className="text-center py-2">PF</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {standings.map((team, idx) => {
+                        const qualifying = idx < 4;
+                        return (
+                          <tr key={idx} className={`border-b ${qualifying ? 'bg-green-50' : ''}`}>
+                            <td className="py-2 px-2 font-bold">{team.col6}</td>
+                            <td className="py-2">
+                              <p className="font-semibold">{getTeamName(team.col1)}</p>
+                              <p className="text-xs text-gray-500">{getTeamOwner(team.col1)}</p>
+                            </td>
+                            <td className="text-center py-2">{team.col2}</td>
+                            <td className="text-center py-2">{team.col3}</td>
+                            <td className="text-center py-2">{formatScore(team.col4)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const Matchups = () => {
     const gpWeeks = [1, 2, 3, 4, 5];
     const currentNFLWeek = data.config.length > 2 ? toNumber(data.config[2].col1) : 10;
     const currentGPWeek = currentNFLWeek >= 9 && currentNFLWeek <= 13 ? currentNFLWeek - 8 : null;
     
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold mb-6">Group Stage - Round Robin</h1>
+        <h1 className="text-3xl font-bold mb-6">Group Matchups</h1>
         
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Standings</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {groupNames.map(groupName => {
-              const standings = data.groupStandings.filter(s => s.col0 === groupName);
-              
-              return (
-                <div key={groupName} className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4">
-                    <h2 className="text-2xl font-bold text-white">Group {groupName}</h2>
-                  </div>
-                  <div className="p-4">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-2">Rank</th>
-                          <th className="text-left py-2">Team</th>
-                          <th className="text-center py-2">W</th>
-                          <th className="text-center py-2">L</th>
-                          <th className="text-center py-2">PF</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {standings.map((team, idx) => {
-                          const qualifying = idx < 4;
-                          return (
-                            <tr key={idx} className={`border-b ${qualifying ? 'bg-green-50' : ''}`}>
-                              <td className="py-2 px-2 font-bold">{team.col6}</td>
-                              <td className="py-2">
-                                <p className="font-semibold">{getTeamName(team.col1)}</p>
-                                <p className="text-xs text-gray-500">{getTeamOwner(team.col1)}</p>
-                              </td>
-                              <td className="text-center py-2">{toNumber(team.col2)}</td>
-                              <td className="text-center py-2">{toNumber(team.col3)}</td>
-                              <td className="text-center py-2">{formatScore(team.col4)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Weekly Matchups</h2>
-          {gpWeeks.map(gpWeek => {
-            const weekMatchups = data.groupMatchups.filter(m => toNumber(m.col0) === gpWeek);
-            if (weekMatchups.length === 0) return null;
-            
-            const matchupsByGroup = {};
-            weekMatchups.forEach(matchup => {
-              const group = matchup.col2;
-              if (!matchupsByGroup[group]) matchupsByGroup[group] = [];
-              matchupsByGroup[group].push(matchup);
-            });
-            
-            const isCurrentWeek = gpWeek === currentGPWeek;
-            
-            return (
-              <div key={gpWeek} className={`bg-white rounded-lg shadow p-6 mb-4 ${isCurrentWeek ? 'border-4 border-blue-600' : ''}`}>
-                <h3 className={`text-xl font-bold mb-4 ${isCurrentWeek ? 'text-blue-600' : 'text-gray-800'}`}>
-                  Group Play Week {gpWeek} {isCurrentWeek && '(Current Week)'}
-                  <span className="text-sm font-normal text-gray-500 ml-2">
-                    NFL Week {gpWeek + 8}
-                  </span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {Object.entries(matchupsByGroup).sort().map(([group, matchups]) => (
-                    <div key={group} className="border-2 border-gray-200 rounded-lg overflow-hidden">
-                      <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
-                        <h4 className="text-base font-bold text-center">Group {group}</h4>
-                      </div>
-                      <div className="p-3">
-                        {matchups.map((matchup, idx) => {
-                          const homeTeam = getTeamName(matchup.col6);
-                          const awayTeam = getTeamName(matchup.col7);
-                          const homeScore = toNumber(matchup.col8);
-                          const awayScore = toNumber(matchup.col9);
-                          const hasScores = homeScore > 0 || awayScore > 0;
-                          const winner = matchup.col10;
-                          
-                          return (
-                            <div key={idx} className={idx < matchups.length - 1 ? "mb-3" : ""}>
-                              <div className={`flex justify-between items-center p-2 rounded-t ${winner === matchup.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
-                                <span className="text-xs text-gray-600 mr-2">
-                                  Seed {matchup.col3}
-                                </span>
-                                <span className="text-sm flex-1">{homeTeam}</span>
-                                <span className="text-lg font-bold">
-                                  {hasScores ? formatScore(homeScore) : '-'}
-                                </span>
-                              </div>
-                              <div className={`flex justify-between items-center p-2 rounded-b border-t ${winner === matchup.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
-                                <span className="text-xs text-gray-600 mr-2">
-                                  Seed {matchup.col4}
-                                </span>
-                                <span className="text-sm flex-1">{awayTeam}</span>
-                                <span className="text-lg font-bold">
-                                  {hasScores ? formatScore(awayScore) : '-'}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+        {gpWeeks.map(gpWeek => {
+          const weekMatchups = data.groupMatchups.filter(m => toNumber(m.col0) === gpWeek);
+          if (weekMatchups.length === 0) return null;
+          
+          const matchupsByGroup = {};
+          weekMatchups.forEach(matchup => {
+            const group = matchup.col2;
+            if (!matchupsByGroup[group]) matchupsByGroup[group] = [];
+            matchupsByGroup[group].push(matchup);
+          });
+          
+          const isCurrentWeek = gpWeek === currentGPWeek;
+          
+          return (
+            <div key={gpWeek} className={`bg-white rounded-lg shadow p-6 ${isCurrentWeek ? 'border-4 border-blue-600' : ''}`}>
+              <h3 className={`text-xl font-bold mb-4 ${isCurrentWeek ? 'text-blue-600' : 'text-gray-800'}`}>
+                Group Play Week {gpWeek} {isCurrentWeek && '(Current Week)'}
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  NFL Week {gpWeek + 8}
+                </span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(matchupsByGroup).sort().map(([group, matchups]) => (
+                  <div key={group} className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
+                      <h4 className="text-base font-bold text-center">Group {group}</h4>
                     </div>
-                  ))}
-                </div>
+                    <div className="p-3">
+                      {matchups.map((matchup, idx) => {
+                        const homeTeam = getTeamName(matchup.col6);
+                        const awayTeam = getTeamName(matchup.col7);
+                        const homeScore = toNumber(matchup.col8);
+                        const awayScore = toNumber(matchup.col9);
+                        const hasScores = homeScore > 0 || awayScore > 0;
+                        const winner = matchup.col10;
+                        
+                        return (
+                          <div key={idx} className={idx < matchups.length - 1 ? "mb-3" : ""}>
+                            <div className={`flex justify-between items-center p-2 rounded-t ${winner === matchup.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                              <span className="text-xs text-gray-600 mr-2">
+                                {matchup.col3}
+                              </span>
+                              <span className="text-sm flex-1">{homeTeam}</span>
+                              <span className="text-lg font-bold">
+                                {hasScores ? formatScore(homeScore) : '-'}
+                              </span>
+                            </div>
+                            <div className={`flex justify-between items-center p-2 rounded-b border-t ${winner === matchup.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                              <span className="text-xs text-gray-600 mr-2">
+                                {matchup.col4}
+                              </span>
+                              <span className="text-sm flex-1">{awayTeam}</span>
+                              <span className="text-lg font-bold">
+                                {hasScores ? formatScore(awayScore) : '-'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -437,9 +442,10 @@ const CommissionersCup = () => {
             <div className="flex space-x-1">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-                { id: 'groups', label: 'Groups', icon: Users },
+                { id: 'standings', label: 'Standings', icon: Trophy },
+                { id: 'matchups', label: 'Matchups', icon: Users },
                 { id: 'bracket', label: 'Bracket', icon: Target },
-                { id: 'teams', label: 'Teams', icon: Trophy }
+                { id: 'teams', label: 'Teams', icon: Users }
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -461,7 +467,8 @@ const CommissionersCup = () => {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'groups' && <Groups />}
+        {activeTab === 'standings' && <Standings />}
+        {activeTab === 'matchups' && <Matchups />}
         {activeTab === 'bracket' && <Bracket />}
         {activeTab === 'teams' && <Teams />}
         
