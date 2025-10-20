@@ -12,14 +12,15 @@ const CommissionersCup = () => {
     groupStandings: [],
     bracketMatchups: [],
     liveScoring: [],
-    allPlayTiers: []
+    allPlayTiers: [],
+    config: []
   });
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
 
   const fetchSheetData = async () => {
     try {
-      const sheets = ['franchises', 'groups', 'group matchups', 'group standings', 'bracket matchups', 'live scoring', 'all play tiers'];
+      const sheets = ['franchises', 'groups', 'group matchups', 'group standings', 'bracket matchups', 'live scoring', 'all play tiers', 'Config'];
       const promises = sheets.map(sheet => 
         fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheet)}`)
           .then(res => res.text())
@@ -33,7 +34,7 @@ const CommissionersCup = () => {
       const newData = {};
       
       results.forEach(({ sheet, data: rows }) => {
-        const key = sheet.replace(/ /g, '');
+        const key = sheet.replace(/ /g, '').toLowerCase();
         newData[key] = rows.map(row => {
           const obj = {};
           row.c.forEach((cell, i) => {
@@ -50,7 +51,8 @@ const CommissionersCup = () => {
         groupStandings: newData.groupstandings || [],
         bracketMatchups: newData.bracketmatchups || [],
         liveScoring: newData.livescoring || [],
-        allPlayTiers: newData.allplaytiers || []
+        allPlayTiers: newData.allplaytiers || [],
+        config: newData.config || []
       });
       setLastUpdate(new Date());
       setLoading(false);
@@ -62,7 +64,7 @@ const CommissionersCup = () => {
 
   useEffect(() => {
     fetchSheetData();
-    const interval = setInterval(fetchSheetData, 300000);
+    const interval = setInterval(fetchSheetData, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -87,77 +89,125 @@ const CommissionersCup = () => {
   };
 
   const Dashboard = () => {
-    const currentWeek = 10;
-    const phase = currentWeek < 9 ? 'Pre-Tournament' : currentWeek <= 13 ? 'Group Stage' : 'Elimination Bracket';
-    
+    const currentNFLWeek = data.config.length > 2 ? toNumber(data.config[2].col1) : 10;
+    const currentGPWeek = currentNFLWeek >= 9 && currentNFLWeek <= 13 ? currentNFLWeek - 8 : null;
+    const phase = currentNFLWeek < 9 ? 'Pre-Tournament' : currentNFLWeek <= 13 ? 'Group Stage' : 'Elimination Bracket';
     const liveGames = data.liveScoring.filter(game => toNumber(game.col2) > 0);
+    const currentWeekMatchups = currentGPWeek ? data.groupMatchups.filter(m => toNumber(m.col0) === currentGPWeek) : [];
+    
+    const matchupsByGroup = {};
+    currentWeekMatchups.forEach(matchup => {
+      const group = matchup.col2;
+      if (!matchupsByGroup[group]) matchupsByGroup[group] = [];
+      matchupsByGroup[group].push(matchup);
+    });
     
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <div style={{ 
-          background: 'linear-gradient(to right, #2563eb, #9333ea)', 
-          borderRadius: '8px', 
-          padding: '32px', 
-          color: 'white' 
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '8px' }}>Commissioner's Cup 2024</h1>
-              <p style={{ fontSize: '20px', opacity: 0.9 }}>Week {currentWeek} - {phase}</p>
+              <h1 className="text-4xl font-bold mb-2">Commissioner's Cup 2024</h1>
+              <p className="text-xl opacity-90">NFL Week {currentNFLWeek} - {phase}</p>
+              {currentGPWeek && <p className="text-base opacity-80">Group Play Week {currentGPWeek}</p>}
             </div>
-            <img src="https://iili.io/3wiyhl.png" alt="Commissioner's Cup" style={{ height: '96px', width: '96px', objectFit: 'contain' }} />
+            <img src="https://iili.io/3wiyhl.png" alt="Commissioner's Cup" className="h-24 w-24 object-contain" />
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-          <div style={{ background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p style={{ color: '#6b7280', fontSize: '14px' }}>Total Teams</p>
-                <p style={{ fontSize: '30px', fontWeight: 'bold', color: '#1f2937' }}>24</p>
+                <p className="text-gray-500 text-sm">Total Teams</p>
+                <p className="text-3xl font-bold text-gray-800">24</p>
               </div>
-              <Users size={48} color="#3b82f6" />
+              <Users className="h-12 w-12 text-blue-500" />
             </div>
           </div>
           
-          <div style={{ background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p style={{ color: '#6b7280', fontSize: '14px' }}>Prize Pool</p>
-                <p style={{ fontSize: '30px', fontWeight: 'bold', color: '#16a34a' }}>$600</p>
+                <p className="text-gray-500 text-sm">Prize Pool</p>
+                <p className="text-3xl font-bold text-green-600">$600</p>
               </div>
-              <Trophy size={48} color="#eab308" />
+              <Trophy className="h-12 w-12 text-yellow-500" />
             </div>
           </div>
           
-          <div style={{ background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p style={{ color: '#6b7280', fontSize: '14px' }}>Current Phase</p>
-                <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#9333ea' }}>{phase}</p>
+                <p className="text-gray-500 text-sm">Current Phase</p>
+                <p className="text-2xl font-bold text-purple-600">{phase}</p>
               </div>
-              <Target size={48} color="#a855f7" />
+              <Target className="h-12 w-12 text-purple-500" />
             </div>
           </div>
         </div>
+
+        {currentGPWeek && Object.keys(matchupsByGroup).length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-bold mb-4">
+              This Week's Matchups - Group Play Week {currentGPWeek}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Object.entries(matchupsByGroup).sort().map(([group, matchups]) => (
+                <div key={group} className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                  <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
+                    <h3 className="text-lg font-bold text-center">Group {group}</h3>
+                  </div>
+                  <div className="p-3">
+                    {matchups.map((matchup, idx) => {
+                      const homeTeam = getTeamName(matchup.col6);
+                      const awayTeam = getTeamName(matchup.col7);
+                      const homeScore = toNumber(matchup.col8);
+                      const awayScore = toNumber(matchup.col9);
+                      const hasScores = homeScore > 0 || awayScore > 0;
+                      const winner = matchup.col10;
+                      
+                      return (
+                        <div key={idx} className={idx < matchups.length - 1 ? "mb-3" : ""}>
+                          <div className={`flex justify-between items-center p-2 rounded-t ${winner === matchup.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                            <span className="text-sm">{homeTeam}</span>
+                            <span className="text-lg font-bold">
+                              {hasScores ? formatScore(homeScore) : '-'}
+                            </span>
+                          </div>
+                          <div className={`flex justify-between items-center p-2 rounded-b border-t ${winner === matchup.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                            <span className="text-sm">{awayTeam}</span>
+                            <span className="text-lg font-bold">
+                              {hasScores ? formatScore(awayScore) : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {liveGames.length > 0 && (
-          <div style={{ background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-              <Clock size={24} color="#ef4444" style={{ marginRight: '8px' }} />
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-bold mb-4 flex items-center">
+              <Clock className="mr-2 text-red-500" />
               Live Scores
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="space-y-3">
               {liveGames.map((game, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f9fafb', borderRadius: '4px' }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 600 }}>{getTeamName(game.col6)}</p>
-                    <p style={{ fontSize: '14px', color: '#6b7280' }}>{getTeamOwner(game.col6)}</p>
+                <div key={i} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                  <div className="flex-1">
+                    <p className="font-semibold">{getTeamName(game.col6)}</p>
+                    <p className="text-sm text-gray-500">{getTeamOwner(game.col6)}</p>
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2563eb', margin: '0 16px' }}>
+                  <div className="text-2xl font-bold text-blue-600 mx-4">
                     {formatScore(game.col2)}
                   </div>
-                  <div style={{ textAlign: 'right', fontSize: '14px', color: '#6b7280' }}>
+                  <div className="text-right text-sm text-gray-500">
                     <p>{toNumber(game.col4)} yet to play</p>
                     <p>{toNumber(game.col5)} playing</p>
                   </div>
@@ -172,49 +222,125 @@ const CommissionersCup = () => {
 
   const Groups = () => {
     const groupNames = ['A', 'B', 'C', 'D'];
+    const gpWeeks = [1, 2, 3, 4, 5];
+    const currentNFLWeek = data.config.length > 2 ? toNumber(data.config[2].col1) : 10;
+    const currentGPWeek = currentNFLWeek >= 9 && currentNFLWeek <= 13 ? currentNFLWeek - 8 : null;
     
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '24px' }}>Group Stage - Round Robin</h1>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold mb-6">Group Stage - Round Robin</h1>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
-          {groupNames.map(groupName => {
-            const standings = data.groupStandings.filter(s => s.col0 === groupName);
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Standings</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {groupNames.map(groupName => {
+              const standings = data.groupStandings.filter(s => s.col0 === groupName);
+              
+              return (
+                <div key={groupName} className="bg-white rounded-lg shadow overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4">
+                    <h2 className="text-2xl font-bold text-white">Group {groupName}</h2>
+                  </div>
+                  <div className="p-4">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-2">Rank</th>
+                          <th className="text-left py-2">Team</th>
+                          <th className="text-center py-2">W</th>
+                          <th className="text-center py-2">L</th>
+                          <th className="text-center py-2">PF</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {standings.map((team, idx) => {
+                          const qualifying = idx < 4;
+                          return (
+                            <tr key={idx} className={`border-b ${qualifying ? 'bg-green-50' : ''}`}>
+                              <td className="py-2 px-2 font-bold">{team.col6}</td>
+                              <td className="py-2">
+                                <p className="font-semibold">{getTeamName(team.col1)}</p>
+                                <p className="text-xs text-gray-500">{getTeamOwner(team.col1)}</p>
+                              </td>
+                              <td className="text-center py-2">{toNumber(team.col2)}</td>
+                              <td className="text-center py-2">{toNumber(team.col3)}</td>
+                              <td className="text-center py-2">{formatScore(team.col4)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Weekly Matchups</h2>
+          {gpWeeks.map(gpWeek => {
+            const weekMatchups = data.groupMatchups.filter(m => toNumber(m.col0) === gpWeek);
+            if (weekMatchups.length === 0) return null;
+            
+            const matchupsByGroup = {};
+            weekMatchups.forEach(matchup => {
+              const group = matchup.col2;
+              if (!matchupsByGroup[group]) matchupsByGroup[group] = [];
+              matchupsByGroup[group].push(matchup);
+            });
+            
+            const isCurrentWeek = gpWeek === currentGPWeek;
             
             return (
-              <div key={groupName} style={{ background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-                <div style={{ background: 'linear-gradient(to right, #3b82f6, #a855f7)', padding: '16px' }}>
-                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: 'white' }}>Group {groupName}</h2>
-                </div>
-                <div style={{ padding: '16px' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                        <th style={{ textAlign: 'left', padding: '8px' }}>Rank</th>
-                        <th style={{ textAlign: 'left', padding: '8px' }}>Team</th>
-                        <th style={{ textAlign: 'center', padding: '8px' }}>W</th>
-                        <th style={{ textAlign: 'center', padding: '8px' }}>L</th>
-                        <th style={{ textAlign: 'center', padding: '8px' }}>PF</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {standings.map((team, idx) => {
-                        const qualifying = idx < 4;
-                        return (
-                          <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb', background: qualifying ? '#f0fdf4' : 'white' }}>
-                            <td style={{ padding: '8px', fontWeight: 'bold' }}>{team.col6}</td>
-                            <td style={{ padding: '8px' }}>
-                              <p style={{ fontWeight: 600 }}>{getTeamName(team.col1)}</p>
-                              <p style={{ fontSize: '12px', color: '#6b7280' }}>{getTeamOwner(team.col1)}</p>
-                            </td>
-                            <td style={{ textAlign: 'center', padding: '8px' }}>{toNumber(team.col2)}</td>
-                            <td style={{ textAlign: 'center', padding: '8px' }}>{toNumber(team.col3)}</td>
-                            <td style={{ textAlign: 'center', padding: '8px' }}>{formatScore(team.col4)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+              <div key={gpWeek} className={`bg-white rounded-lg shadow p-6 mb-4 ${isCurrentWeek ? 'border-4 border-blue-600' : ''}`}>
+                <h3 className={`text-xl font-bold mb-4 ${isCurrentWeek ? 'text-blue-600' : 'text-gray-800'}`}>
+                  Group Play Week {gpWeek} {isCurrentWeek && '(Current Week)'}
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    NFL Week {gpWeek + 8}
+                  </span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {Object.entries(matchupsByGroup).sort().map(([group, matchups]) => (
+                    <div key={group} className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
+                        <h4 className="text-base font-bold text-center">Group {group}</h4>
+                      </div>
+                      <div className="p-3">
+                        {matchups.map((matchup, idx) => {
+                          const homeTeam = getTeamName(matchup.col6);
+                          const awayTeam = getTeamName(matchup.col7);
+                          const homeScore = toNumber(matchup.col8);
+                          const awayScore = toNumber(matchup.col9);
+                          const hasScores = homeScore > 0 || awayScore > 0;
+                          const winner = matchup.col10;
+                          
+                          return (
+                            <div key={idx} className={idx < matchups.length - 1 ? "mb-3" : ""}>
+                              <div className={`flex justify-between items-center p-2 rounded-t ${winner === matchup.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                                <span className="text-xs text-gray-600 mr-2">
+                                  Seed {matchup.col3}
+                                </span>
+                                <span className="text-sm flex-1">{homeTeam}</span>
+                                <span className="text-lg font-bold">
+                                  {hasScores ? formatScore(homeScore) : '-'}
+                                </span>
+                              </div>
+                              <div className={`flex justify-between items-center p-2 rounded-b border-t ${winner === matchup.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                                <span className="text-xs text-gray-600 mr-2">
+                                  Seed {matchup.col4}
+                                </span>
+                                <span className="text-sm flex-1">{awayTeam}</span>
+                                <span className="text-lg font-bold">
+                                  {hasScores ? formatScore(awayScore) : '-'}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );
@@ -233,41 +359,27 @@ const CommissionersCup = () => {
     };
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '24px' }}>Elimination Bracket</h1>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold mb-6">Elimination Bracket</h1>
         
-        <div style={{ background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px', overflowX: 'auto' }}>
-          <div style={{ display: 'flex', gap: '32px', minWidth: 'max-content' }}>
+        <div className="bg-white rounded-lg shadow p-6 overflow-x-auto">
+          <div className="flex gap-8" style={{ minWidth: 'max-content' }}>
             {Object.entries(rounds).map(([roundName, matches]) => (
-              <div key={roundName} style={{ flex: 1, minWidth: '250px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', textAlign: 'center', color: '#9333ea' }}>{roundName}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div key={roundName} className="flex-1" style={{ minWidth: '250px' }}>
+                <h3 className="text-xl font-bold mb-4 text-center text-purple-600">{roundName}</h3>
+                <div className="space-y-6">
                   {matches.map((match, idx) => (
-                    <div key={idx} style={{ border: '2px solid #d1d5db', borderRadius: '8px', overflow: 'hidden' }}>
-                      <div style={{ 
-                        padding: '12px', 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        background: match.col10 === match.col6 ? '#dcfce7' : '#f9fafb',
-                        fontWeight: match.col10 === match.col6 ? 'bold' : 'normal'
-                      }}>
-                        <span style={{ fontSize: '14px', color: '#6b7280' }}>{match.col4}</span>
+                    <div key={idx} className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                      <div className={`p-3 flex justify-between items-center ${match.col10 === match.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                        <span className="text-sm text-gray-600">{match.col4}</span>
                         <span>{getTeamName(match.col6)}</span>
-                        <span style={{ fontWeight: 'bold' }}>{match.col8 ? formatScore(match.col8) : '-'}</span>
+                        <span className="font-bold">{match.col8 ? formatScore(match.col8) : '-'}</span>
                       </div>
-                      <div style={{ borderTop: '2px solid #d1d5db' }}></div>
-                      <div style={{ 
-                        padding: '12px', 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        background: match.col10 === match.col7 ? '#dcfce7' : '#f9fafb',
-                        fontWeight: match.col10 === match.col7 ? 'bold' : 'normal'
-                      }}>
-                        <span style={{ fontSize: '14px', color: '#6b7280' }}>{match.col5}</span>
+                      <div className="border-t-2"></div>
+                      <div className={`p-3 flex justify-between items-center ${match.col10 === match.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                        <span className="text-sm text-gray-600">{match.col5}</span>
                         <span>{getTeamName(match.col7)}</span>
-                        <span style={{ fontWeight: 'bold' }}>{match.col9 ? formatScore(match.col9) : '-'}</span>
+                        <span className="font-bold">{match.col9 ? formatScore(match.col9) : '-'}</span>
                       </div>
                     </div>
                   ))}
@@ -282,27 +394,17 @@ const CommissionersCup = () => {
 
   const Teams = () => {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '24px' }}>All Teams</h1>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold mb-6">All Teams</h1>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.franchises.map((team, idx) => (
-            <div key={idx} style={{ 
-              background: 'white', 
-              borderRadius: '8px', 
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
-              padding: '16px',
-              transition: 'box-shadow 0.2s',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontWeight: 'bold', fontSize: '18px' }}>{team.col1}</h3>
-                  <p style={{ color: '#6b7280' }}>{team.col3}</p>
-                  <p style={{ fontSize: '14px', color: '#9ca3af' }}>{team.col7}</p>
+            <div key={idx} className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition">
+              <div className="flex items-center space-x-4">
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg">{team.col1}</h3>
+                  <p className="text-gray-600">{team.col3}</p>
+                  <p className="text-sm text-gray-500">{team.col7}</p>
                 </div>
               </div>
             </div>
@@ -314,32 +416,25 @@ const CommissionersCup = () => {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <RefreshCw size={48} color="#2563eb" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
-          <p style={{ fontSize: '20px', color: '#6b7280' }}>Loading Commissioner's Cup data...</p>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-xl text-gray-600">Loading Commissioner's Cup data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f3f4f6' }}>
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-      
-      <nav style={{ background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img src="https://iili.io/3wiyhl.png" alt="Logo" style={{ height: '48px', width: '48px' }} />
-              <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937' }}>Commissioner's Cup 2024</span>
+    <div className="min-h-screen bg-gray-100">
+      <nav className="bg-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <img src="https://iili.io/3wiyhl.png" alt="Logo" className="h-12 w-12" />
+              <span className="text-xl font-bold text-gray-800">Commissioner's Cup 2024</span>
             </div>
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div className="flex space-x-1">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
                 { id: 'groups', label: 'Groups', icon: Users },
@@ -349,27 +444,14 @@ const CommissionersCup = () => {
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: activeTab === id ? '#2563eb' : 'transparent',
-                    color: activeTab === id ? 'white' : '#6b7280',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (activeTab !== id) e.currentTarget.style.background = '#f3f4f6';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTab !== id) e.currentTarget.style.background = 'transparent';
-                  }}
+                  className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition ${
+                    activeTab === id
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
                 >
-                  <Icon size={16} />
-                  <span style={{ display: window.innerWidth < 768 ? 'none' : 'inline' }}>{label}</span>
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden md:inline">{label}</span>
                 </button>
               ))}
             </div>
@@ -377,14 +459,14 @@ const CommissionersCup = () => {
         </div>
       </nav>
 
-      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 16px' }}>
+      <main className="max-w-7xl mx-auto px-4 py-8">
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'groups' && <Groups />}
         {activeTab === 'bracket' && <Bracket />}
         {activeTab === 'teams' && <Teams />}
         
         {lastUpdate && (
-          <div style={{ marginTop: '32px', textAlign: 'center', fontSize: '14px', color: '#6b7280' }}>
+          <div className="mt-8 text-center text-sm text-gray-500">
             Last updated: {lastUpdate.toLocaleTimeString()}
           </div>
         )}
