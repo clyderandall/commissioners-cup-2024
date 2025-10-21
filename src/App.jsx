@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Users, Target, BarChart3, RefreshCw, Clock } from 'lucide-react';
+import { Trophy, Users, Target, BarChart3, RefreshCw, Clock, Calendar, Award, BookOpen } from 'lucide-react';
 
 const SHEET_ID = '1ucF98nx4O5Pq50JtOwM-HC4npoFtJS9YMR4Oclbb0dw';
 
