@@ -230,7 +230,79 @@ const CommissionersCup = () => {
   };
 
   const Matchups = () => {
-    return <div className="text-center text-gray-600">Matchups coming soon...</div>;
+    const gpWeeks = [1, 2, 3, 4, 5];
+    const configRow = data.config.find(row => row.col0 === 'Current NFL Week');
+    const currentNFLWeek = configRow ? toNumber(configRow.col1) : 10;
+    const currentGPWeek = currentNFLWeek >= 9 && currentNFLWeek <= 13 ? currentNFLWeek - 8 : null;
+    
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold mb-6">Group Matchups</h1>
+        
+        {gpWeeks.map(gpWeek => {
+          const weekMatchups = data.groupMatchups.filter(m => toNumber(m.col0) === gpWeek);
+          if (weekMatchups.length === 0) return null;
+          
+          const matchupsByGroup = {};
+          weekMatchups.forEach(matchup => {
+            const group = matchup.col2;
+            if (!matchupsByGroup[group]) matchupsByGroup[group] = [];
+            matchupsByGroup[group].push(matchup);
+          });
+          
+          const isCurrentWeek = gpWeek === currentGPWeek;
+          
+          return (
+            <div key={gpWeek} className={`bg-white rounded-lg shadow p-6 ${isCurrentWeek ? 'border-4 border-blue-600' : ''}`}>
+              <h3 className={`text-xl font-bold mb-4 ${isCurrentWeek ? 'text-blue-600' : 'text-gray-800'}`}>
+                Group Play Week {gpWeek} {isCurrentWeek && '(Current Week)'}
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  NFL Week {gpWeek + 8}
+                </span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(matchupsByGroup).sort().map(([group, matchups]) => (
+                  <div key={group} className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
+                      <h4 className="text-base font-bold text-center">Group {group}</h4>
+                    </div>
+                    <div className="p-3">
+                      {matchups.map((matchup, idx) => {
+                        const homeTeam = getTeamName(matchup.col6);
+                        const awayTeam = getTeamName(matchup.col7);
+                        const homeScore = toNumber(matchup.col8);
+                        const awayScore = toNumber(matchup.col9);
+                        const hasScores = homeScore > 0 || awayScore > 0;
+                        const winner = matchup.col10;
+                        
+                        return (
+                          <div key={idx} className={idx < matchups.length - 1 ? "mb-3" : ""}>
+                            <div className={`flex justify-between items-center p-2 rounded-t ${winner === matchup.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                              <span className="text-xs text-gray-600 mr-2">{matchup.col3}</span>
+                              <span className="text-sm flex-1">{homeTeam}</span>
+                              <span className="text-lg font-bold">
+                                {hasScores ? formatScore(homeScore) : '-'}
+                              </span>
+                            </div>
+                            <div className={`flex justify-between items-center p-2 rounded-b border-t ${winner === matchup.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                              <span className="text-xs text-gray-600 mr-2">{matchup.col4}</span>
+                              <span className="text-sm flex-1">{awayTeam}</span>
+                              <span className="text-lg font-bold">
+                                {hasScores ? formatScore(awayScore) : '-'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const Bracket = () => {
