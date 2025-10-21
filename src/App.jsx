@@ -84,6 +84,11 @@ const CommissionersCup = () => {
     return team ? team.col3 : 'Unknown';
   };
 
+  const getTeamLogo = (ccTeamId) => {
+    const team = data.franchises.find(f => f.col8 === ccTeamId);
+    return team ? team.col6 : null;
+  };
+
   const Dashboard = () => {
     const configRow = data.config.find(row => row.col0 === 'Current NFL Week');
     const currentNFLWeek = configRow ? toNumber(configRow.col1) : 10;
@@ -272,14 +277,19 @@ const CommissionersCup = () => {
           
           <div className={`p-4 ${winner === homeTeamId ? 'bg-green-50' : 'bg-gray-50'} border-b`}>
             <div className="flex justify-between items-center">
-              <div className="flex-1">
-                {isBracket && <span className="text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded mr-2">{matchup.col4}</span>}
-                <p className={`font-bold text-lg ${winner === homeTeamId ? 'text-green-700' : 'text-gray-800'} ${isBracket ? 'inline' : ''}`}>{getTeamName(homeTeamId)}</p>
-                <p className={`text-sm text-gray-600 ${isBracket ? 'ml-16' : ''}`}>{getTeamOwner(homeTeamId)}</p>
-                <div className={`flex gap-4 text-xs text-gray-500 mt-1 ${isBracket ? 'ml-16' : ''}`}>
-                  {homePlaying > 0 && <span className="text-green-600 font-semibold">⚡ {homePlaying} playing</span>}
-                  {homeYetToPlay > 0 && <span>📋 {homeYetToPlay} yet to play</span>}
-                  {homeSecondsLeft > 0 && <span>⏱️ {Math.floor(homeSecondsLeft / 60)}m left</span>}
+              <div className="flex-1 flex items-center gap-3">
+                {isBracket && <span className="text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded">{matchup.col4}</span>}
+                {getTeamLogo(homeTeamId) && (
+                  <img src={getTeamLogo(homeTeamId)} alt="" className="h-10 w-10 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                )}
+                <div className="flex-1">
+                  <p className={`font-bold text-lg ${winner === homeTeamId ? 'text-green-700' : 'text-gray-800'}`}>{getTeamName(homeTeamId)}</p>
+                  <p className="text-sm text-gray-600">{getTeamOwner(homeTeamId)}</p>
+                  <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                    {homePlaying > 0 && <span className="text-green-600 font-semibold">⚡ {homePlaying} playing</span>}
+                    {homeYetToPlay > 0 && <span>📋 {homeYetToPlay} yet to play</span>}
+                    {homeSecondsLeft > 0 && <span>⏱️ {Math.floor(homeSecondsLeft / 60)}m left</span>}
+                  </div>
                 </div>
               </div>
               <div className="text-right ml-4">
@@ -290,14 +300,19 @@ const CommissionersCup = () => {
           
           <div className={`p-4 ${winner === awayTeamId ? 'bg-green-50' : 'bg-white'}`}>
             <div className="flex justify-between items-center">
-              <div className="flex-1">
-                {isBracket && <span className="text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded mr-2">{matchup.col5}</span>}
-                <p className={`font-bold text-lg ${winner === awayTeamId ? 'text-green-700' : 'text-gray-800'} ${isBracket ? 'inline' : ''}`}>{getTeamName(awayTeamId)}</p>
-                <p className={`text-sm text-gray-600 ${isBracket ? 'ml-16' : ''}`}>{getTeamOwner(awayTeamId)}</p>
-                <div className={`flex gap-4 text-xs text-gray-500 mt-1 ${isBracket ? 'ml-16' : ''}`}>
-                  {awayPlaying > 0 && <span className="text-green-600 font-semibold">⚡ {awayPlaying} playing</span>}
-                  {awayYetToPlay > 0 && <span>📋 {awayYetToPlay} yet to play</span>}
-                  {awaySecondsLeft > 0 && <span>⏱️ {Math.floor(awaySecondsLeft / 60)}m left</span>}
+              <div className="flex-1 flex items-center gap-3">
+                {isBracket && <span className="text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded">{matchup.col5}</span>}
+                {getTeamLogo(awayTeamId) && (
+                  <img src={getTeamLogo(awayTeamId)} alt="" className="h-10 w-10 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                )}
+                <div className="flex-1">
+                  <p className={`font-bold text-lg ${winner === awayTeamId ? 'text-green-700' : 'text-gray-800'}`}>{getTeamName(awayTeamId)}</p>
+                  <p className="text-sm text-gray-600">{getTeamOwner(awayTeamId)}</p>
+                  <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                    {awayPlaying > 0 && <span className="text-green-600 font-semibold">⚡ {awayPlaying} playing</span>}
+                    {awayYetToPlay > 0 && <span>📋 {awayYetToPlay} yet to play</span>}
+                    {awaySecondsLeft > 0 && <span>⏱️ {Math.floor(awaySecondsLeft / 60)}m left</span>}
+                  </div>
                 </div>
               </div>
               <div className="text-right ml-4">
@@ -417,6 +432,9 @@ const CommissionersCup = () => {
                 <div key={idx} className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <span className="text-2xl font-bold text-gray-400">#{idx + 1}</span>
+                    {getTeamLogo(team.col1) && (
+                      <img src={getTeamLogo(team.col1)} alt="" className="h-12 w-12 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                    )}
                     <div>
                       <p className="font-bold text-gray-800">{getTeamName(team.col1)}</p>
                       <p className="text-sm text-gray-600">{getTeamOwner(team.col1)}</p>
@@ -540,8 +558,15 @@ const CommissionersCup = () => {
                           <tr key={idx} className={`border-b ${qualifying ? 'bg-green-50' : ''}`}>
                             <td className="py-2 px-2 font-bold">{team.col6}</td>
                             <td className="py-2">
-                              <p className="font-semibold">{getTeamName(team.col1)}</p>
-                              <p className="text-xs text-gray-500">{getTeamOwner(team.col1)}</p>
+                              <div className="flex items-center gap-2">
+                                {getTeamLogo(team.col1) && (
+                                  <img src={getTeamLogo(team.col1)} alt="" className="h-8 w-8 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                                )}
+                                <div>
+                                  <p className="font-semibold">{getTeamName(team.col1)}</p>
+                                  <p className="text-xs text-gray-500">{getTeamOwner(team.col1)}</p>
+                                </div>
+                              </div>
                             </td>
                             <td className="text-center py-2">{team.col2}</td>
                             <td className="text-center py-2">{team.col3}</td>
@@ -610,6 +635,9 @@ const CommissionersCup = () => {
                           <div key={idx} className={idx < matchups.length - 1 ? "mb-3" : ""}>
                             <div className={`flex justify-between items-center p-2 rounded-t ${winner === matchup.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
                               <span className="text-xs text-gray-600 mr-2">{matchup.col3}</span>
+                              {getTeamLogo(matchup.col6) && (
+                                <img src={getTeamLogo(matchup.col6)} alt="" className="h-6 w-6 object-contain mr-1" onError={(e) => e.target.style.display = 'none'} />
+                              )}
                               <span className="text-sm flex-1">{homeTeam}</span>
                               <span className="text-lg font-bold">
                                 {hasScores ? formatScore(homeScore) : '-'}
@@ -617,6 +645,9 @@ const CommissionersCup = () => {
                             </div>
                             <div className={`flex justify-between items-center p-2 rounded-b border-t ${winner === matchup.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
                               <span className="text-xs text-gray-600 mr-2">{matchup.col4}</span>
+                              {getTeamLogo(matchup.col7) && (
+                                <img src={getTeamLogo(matchup.col7)} alt="" className="h-6 w-6 object-contain mr-1" onError={(e) => e.target.style.display = 'none'} />
+                              )}
                               <span className="text-sm flex-1">{awayTeam}</span>
                               <span className="text-lg font-bold">
                                 {hasScores ? formatScore(awayScore) : '-'}
@@ -660,13 +691,19 @@ const CommissionersCup = () => {
                       <div key={idx} className="border-2 border-gray-300 rounded-lg overflow-hidden">
                         <div className={`p-3 flex justify-between items-center ${match.col10 === match.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
                           <span className="text-sm text-gray-600">{match.col4}</span>
-                          <span className="flex-1 mx-2">{getTeamName(match.col6)}</span>
+                          {getTeamLogo(match.col6) && (
+                            <img src={getTeamLogo(match.col6)} alt="" className="h-8 w-8 object-contain mx-2" onError={(e) => e.target.style.display = 'none'} />
+                          )}
+                          <span className="flex-1">{getTeamName(match.col6)}</span>
                           <span className="font-bold">{match.col8 ? formatScore(match.col8) : '-'}</span>
                         </div>
                         <div className="border-t-2"></div>
                         <div className={`p-3 flex justify-between items-center ${match.col10 === match.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
                           <span className="text-sm text-gray-600">{match.col5}</span>
-                          <span className="flex-1 mx-2">{getTeamName(match.col7)}</span>
+                          {getTeamLogo(match.col7) && (
+                            <img src={getTeamLogo(match.col7)} alt="" className="h-8 w-8 object-contain mx-2" onError={(e) => e.target.style.display = 'none'} />
+                          )}
+                          <span className="flex-1">{getTeamName(match.col7)}</span>
                           <span className="font-bold">{match.col9 ? formatScore(match.col9) : '-'}</span>
                         </div>
                       </div>
