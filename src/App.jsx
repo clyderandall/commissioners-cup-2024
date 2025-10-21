@@ -11,14 +11,15 @@ const CommissionersCup = () => {
     groupStandings: [],
     bracketMatchups: [],
     liveScoring: [],
-    config: []
+    config: [],
+    history: []
   });
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
 
   const fetchSheetData = async () => {
     try {
-      const sheets = ['franchises', 'group matchups', 'group standings', 'bracket matchups', 'live scoring', 'Config'];
+      const sheets = ['franchises', 'group matchups', 'group standings', 'bracket matchups', 'live scoring', 'Config', 'cc history'];
       const promises = sheets.map(sheet => 
         fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheet)}`)
           .then(res => res.text())
@@ -48,7 +49,8 @@ const CommissionersCup = () => {
         groupStandings: newData.groupstandings || [],
         bracketMatchups: newData.bracketmatchups || [],
         liveScoring: newData.livescoring || [],
-        config: newData.config || []
+        config: newData.config || [],
+        history: newData.cchistory || []
       });
       setLastUpdate(new Date());
       setLoading(false);
@@ -767,6 +769,93 @@ const CommissionersCup = () => {
     );
   };
 
+  const History = () => {
+    const champions = data.history.filter(h => h.col0 !== null).sort((a, b) => toNumber(b.col0) - toNumber(a.col0));
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg p-8 text-white">
+          <div className="flex items-center justify-center">
+            <Trophy className="h-16 w-16 mr-4" />
+            <div className="text-center">
+              <h1 className="text-4xl font-bold mb-2">Commissioner's Cup Champions</h1>
+              <p className="text-xl opacity-90">Hall of Champions</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {champions.map((champ, idx) => {
+            const isCurrentYear = toNumber(champ.col0) === 2024;
+            return (
+              <div key={idx} className={`bg-white rounded-lg shadow-lg overflow-hidden ${isCurrentYear ? 'border-4 border-yellow-400' : ''}`}>
+                <div className={`p-6 ${isCurrentYear ? 'bg-gradient-to-r from-yellow-50 to-yellow-100' : 'bg-gradient-to-r from-gray-50 to-gray-100'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`text-4xl font-bold ${isCurrentYear ? 'text-yellow-600' : 'text-gray-600'}`}>
+                        {champ.col0}
+                      </div>
+                      {isCurrentYear && (
+                        <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">
+                          CURRENT CHAMPION
+                        </span>
+                      )}
+                    </div>
+                    <Trophy className={`h-12 w-12 ${isCurrentYear ? 'text-yellow-500' : 'text-gray-400'}`} />
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    {champ.col4 && (
+                      <img 
+                        src={champ.col4} 
+                        alt={`${champ.col1} logo`} 
+                        className="h-20 w-20 object-contain"
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                    )}
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-gray-800 mb-1">{champ.col1}</h3>
+                      <p className="text-lg text-gray-600">{champ.col2}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          champ.col3 === 'ADL' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                        }`}>
+                          {champ.col3}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-bold mb-4">Championship Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <p className="text-gray-600 text-sm mb-2">Total Tournaments</p>
+              <p className="text-4xl font-bold text-blue-600">{champions.length}</p>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <p className="text-gray-600 text-sm mb-2">ADL Championships</p>
+              <p className="text-4xl font-bold text-blue-600">
+                {champions.filter(c => c.col3 === 'ADL').length}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <p className="text-gray-600 text-sm mb-2">BDL Championships</p>
+              <p className="text-4xl font-bold text-purple-600">
+                {champions.filter(c => c.col3 === 'BDL').length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -793,7 +882,8 @@ const CommissionersCup = () => {
                 { id: 'standings', label: 'Standings', icon: Trophy },
                 { id: 'matchups', label: 'Matchups', icon: Users },
                 { id: 'bracket', label: 'Bracket', icon: Target },
-                { id: 'teams', label: 'Teams', icon: Users }
+                { id: 'teams', label: 'Teams', icon: Users },
+                { id: 'history', label: 'History', icon: Trophy }
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -817,6 +907,7 @@ const CommissionersCup = () => {
         {activeTab === 'matchups' && <Matchups />}
         {activeTab === 'bracket' && <Bracket />}
         {activeTab === 'teams' && <Teams />}
+        {activeTab === 'history' && <History />}
         
         {lastUpdate && (
           <div className="mt-8 text-center text-sm text-gray-500">
