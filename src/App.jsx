@@ -112,6 +112,203 @@ const CommissionersCup = () => {
       phaseDetail = 'Season Ended';
     }
 
+    const liveGames = data.liveScoring.filter(game => toNumber(game.col2) > 0);
+    
+    let currentWeekMatchups = [];
+    if (currentGPWeek) {
+      currentWeekMatchups = data.groupMatchups.filter(m => toNumber(m.col0) === currentGPWeek);
+    } else if (currentNFLWeek >= 14 && currentNFLWeek <= 17) {
+      const roundNum = currentNFLWeek - 13;
+      currentWeekMatchups = data.bracketMatchups.filter(m => toNumber(m.col0) === roundNum);
+    }
+    
+    const matchupsByGroup = {};
+    if (currentGPWeek) {
+      currentWeekMatchups.forEach(matchup => {
+        const group = matchup.col2;
+        if (!matchupsByGroup[group]) matchupsByGroup[group] = [];
+        matchupsByGroup[group].push(matchup);
+      });
+    }
+    
+    const teamsRemaining = currentNFLWeek < 14 ? 24 : currentNFLWeek === 14 ? 16 : currentNFLWeek === 15 ? 8 : currentNFLWeek === 16 ? 4 : currentNFLWeek === 17 ? 2 : 1;
+    
+    let highScorer = null;
+    let highScore = 0;
+    if (liveGames.length > 0) {
+      liveGames.forEach(game => {
+        const score = toNumber(game.col2);
+        if (score > highScore) {
+          highScore = score;
+          highScorer = game.col6;
+        }
+      });
+    }
+    
+    let completedMatchups = 0;
+    let totalMatchups = 0;
+    if (currentGPWeek) {
+      const weekMatchups = data.groupMatchups.filter(m => toNumber(m.col0) === currentGPWeek);
+      totalMatchups = weekMatchups.length;
+      completedMatchups = weekMatchups.filter(m => m.col10 !== null && m.col10 !== '').length;
+    } else if (currentNFLWeek >= 14 && currentNFLWeek <= 17) {
+      const roundNum = currentNFLWeek - 13;
+      const roundMatchups = data.bracketMatchups.filter(m => toNumber(m.col0) === roundNum);
+      totalMatchups = roundMatchups.length;
+      completedMatchups = roundMatchups.filter(m => m.col10 !== null && m.col10 !== '').length;
+    }
+
+    const allStandings = data.groupStandings.filter(s => s.col1 !== null).sort((a, b) => {
+      const winsA = toNumber(a.col2);
+      const winsB = toNumber(b.col2);
+      if (winsB !== winsA) return winsB - winsA;
+      return toNumber(b.col4) - toNumber(a.col4);
+    }).slice(0, 4);
+    
+    let closestMatchup = null;
+    let smallestDiff = Infinity;
+    const allMatchups = [...data.groupMatchups, ...data.bracketMatchups];
+    allMatchups.forEach(matchup => {
+      const scoreA = toNumber(matchup.col8);
+      const scoreB = toNumber(matchup.col9);
+      if (scoreA > 0 && scoreB > 0) {
+        const diff = Math.abs(scoreA - scoreB);
+        if (diff < smallestDiff) {
+          smallestDiff = diff;
+          closestMatchup = matchup;
+        }
+      }
+    });
+    
+    let biggestBlowout = null;
+    let largestDiff = 0;
+    allMatchups.forEach(matchup => {
+      const scoreA = toNumber(matchup.col8);
+      const scoreB = toNumber(matchup.col9);
+      if (scoreA > 0 && scoreB > 0) {
+        const diff = Math.abs(scoreA - scoreB);
+        if (diff > largestDiff) {
+          largestDiff = diff;
+          biggestBlowout = matchup;
+        }
+      }
+    });
+
+    const teamStreaks = {};
+    data.franchises.forEach(team => {
+      teamStreaks[team.col8] = { wins: 0, losses: 0, current: 'none' };
+    });
+    
+    const sortedMatchups = data.groupMatchups.filter(m => m.col10 !== null && m.col10 !== '').sort((a, b) => toNumber(a.col0) - toNumber(b.col0));
+    
+    sortedMatchups.forEach(matchup => {
+      const winner = matchup.col10;
+      const loser = matchup.col11;
+      
+      if (winner && teamStreaks[winner]) {
+        if (teamStreaks[winner].current === 'win') {
+          teamStreaks[winner].wins++;
+        } else {
+          teamStreaks[winner].wins = 1;
+          teamStreaks[winner].current = 'win';
+        }
+      }
+      
+      if (loser && teamStreaks[loser]) {
+        if (teamStreaks[loser].current === 'loss') {
+          teamStreaks[loser].losses++;
+        } else {
+          teamStreaks[loser].losses = 1;
+          teamStreaks[loser].current = 'loss';
+        }
+      }
+    });
+    
+    const hotStreak = Object.entries(teamStreaks).filter(([_, streak]) => streak.current === 'win' && streak.wins >= 2).sort((a, b) => b[1].wins - a[1].wins)[0];
+    const coldStreak = Object.entries(teamStreaks).filter(([_, streak]) => streak.current === 'loss' && streak.losses >= 2).sort((a, b) => b[1].losses - a[1].losses)[0];
+    
+    let totalPoints = 0;
+    let totalGames = 0;
+    data.groupMatchups.forEach(matchup => {
+      const scoreA = toNumber(matchup.col8);
+      const scoreB = toNumber(matchup.col9);
+      if (scoreA > 0) {
+        totalPoints += scoreA;
+        totalGames++;
+      }
+      if (scoreB > 0) {
+        totalPoints += scoreB;
+        totalGames++;
+      }
+    });
+    const avgPoints = totalGames > 0 ? totalPoints / totalGames : 0;
+
+    const renderMatchupCard = (matchup, i, isBracket) => {
+      const homeTeamId = matchup.col6;
+      const awayTeamId = matchup.col7;
+      const homeScore = toNumber(matchup.col8);
+      const awayScore = toNumber(matchup.col9);
+      const winner = matchup.col10;
+      
+      const homeLive = data.liveScoring.find(ls => ls.col6 === homeTeamId);
+      const awayLive = data.liveScoring.find(ls => ls.col6 === awayTeamId);
+      
+      const homeLiveScore = homeLive ? toNumber(homeLive.col2) : homeScore;
+      const awayLiveScore = awayLive ? toNumber(awayLive.col2) : awayScore;
+      const homeYetToPlay = homeLive ? toNumber(homeLive.col4) : 0;
+      const awayYetToPlay = awayLive ? toNumber(awayLive.col4) : 0;
+      const homePlaying = homeLive ? toNumber(homeLive.col5) : 0;
+      const awayPlaying = awayLive ? toNumber(awayLive.col5) : 0;
+      const homeSecondsLeft = homeLive ? toNumber(homeLive.col3) : 0;
+      const awaySecondsLeft = awayLive ? toNumber(awayLive.col3) : 0;
+      
+      const isLive = homePlaying > 0 || awayPlaying > 0 || homeYetToPlay > 0 || awayYetToPlay > 0;
+      const isComplete = winner !== null && winner !== '';
+      
+      return (
+        <div key={i} className={`border-2 rounded-lg overflow-hidden ${isLive ? 'border-red-400 shadow-lg' : 'border-gray-300'}`}>
+          {isLive && <div className="bg-red-500 text-white text-center py-1 text-sm font-bold">🔴 LIVE</div>}
+          {isComplete && <div className="bg-green-500 text-white text-center py-1 text-sm font-bold">✓ FINAL</div>}
+          
+          <div className={`p-4 ${winner === homeTeamId ? 'bg-green-50' : 'bg-gray-50'} border-b`}>
+            <div className="flex justify-between items-center">
+              <div className="flex-1">
+                {isBracket && <span className="text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded mr-2">{matchup.col4}</span>}
+                <p className={`font-bold text-lg ${winner === homeTeamId ? 'text-green-700' : 'text-gray-800'} ${isBracket ? 'inline' : ''}`}>{getTeamName(homeTeamId)}</p>
+                <p className={`text-sm text-gray-600 ${isBracket ? 'ml-16' : ''}`}>{getTeamOwner(homeTeamId)}</p>
+                <div className={`flex gap-4 text-xs text-gray-500 mt-1 ${isBracket ? 'ml-16' : ''}`}>
+                  {homePlaying > 0 && <span className="text-green-600 font-semibold">⚡ {homePlaying} playing</span>}
+                  {homeYetToPlay > 0 && <span>📋 {homeYetToPlay} yet to play</span>}
+                  {homeSecondsLeft > 0 && <span>⏱️ {Math.floor(homeSecondsLeft / 60)}m left</span>}
+                </div>
+              </div>
+              <div className="text-right ml-4">
+                <p className={`text-3xl font-bold ${winner === homeTeamId ? 'text-green-600' : 'text-blue-600'}`}>{homeLiveScore > 0 ? formatScore(homeLiveScore) : '-'}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className={`p-4 ${winner === awayTeamId ? 'bg-green-50' : 'bg-white'}`}>
+            <div className="flex justify-between items-center">
+              <div className="flex-1">
+                {isBracket && <span className="text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded mr-2">{matchup.col5}</span>}
+                <p className={`font-bold text-lg ${winner === awayTeamId ? 'text-green-700' : 'text-gray-800'} ${isBracket ? 'inline' : ''}`}>{getTeamName(awayTeamId)}</p>
+                <p className={`text-sm text-gray-600 ${isBracket ? 'ml-16' : ''}`}>{getTeamOwner(awayTeamId)}</p>
+                <div className={`flex gap-4 text-xs text-gray-500 mt-1 ${isBracket ? 'ml-16' : ''}`}>
+                  {awayPlaying > 0 && <span className="text-green-600 font-semibold">⚡ {awayPlaying} playing</span>}
+                  {awayYetToPlay > 0 && <span>📋 {awayYetToPlay} yet to play</span>}
+                  {awaySecondsLeft > 0 && <span>⏱️ {Math.floor(awaySecondsLeft / 60)}m left</span>}
+                </div>
+              </div>
+              <div className="text-right ml-4">
+                <p className={`text-3xl font-bold ${winner === awayTeamId ? 'text-green-600' : 'text-blue-600'}`}>{awayLiveScore > 0 ? formatScore(awayLiveScore) : '-'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
@@ -140,7 +337,7 @@ const CommissionersCup = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-500 text-sm">Teams Remaining</p>
-                <p className="text-3xl font-bold text-blue-600">24</p>
+                <p className="text-3xl font-bold text-blue-600">{teamsRemaining}</p>
                 <p className="text-sm text-gray-600">of 24 total</p>
               </div>
               <Users className="h-12 w-12 text-blue-500" />
@@ -151,22 +348,156 @@ const CommissionersCup = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-500 text-sm">Matchups Complete</p>
-                <p className="text-3xl font-bold text-green-600">0/12</p>
+                <p className="text-3xl font-bold text-green-600">{completedMatchups}/{totalMatchups}</p>
                 <p className="text-sm text-gray-600">this week</p>
               </div>
               <BarChart3 className="h-12 w-12 text-green-500" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Prize Pool</p>
-                <p className="text-3xl font-bold text-green-600">$600</p>
-                <p className="text-sm text-gray-600">24 x $25</p>
+          {highScorer ? (
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 mr-2">
+                  <p className="text-gray-500 text-sm">High Score</p>
+                  <p className="text-xl font-bold text-orange-600">{getTeamName(highScorer)}</p>
+                  <p className="text-2xl font-bold text-gray-800">{formatScore(highScore)}</p>
+                </div>
+                <Trophy className="h-12 w-12 text-yellow-500" />
               </div>
-              <Trophy className="h-12 w-12 text-yellow-500" />
             </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm">Prize Pool</p>
+                  <p className="text-3xl font-bold text-green-600">$600</p>
+                  <p className="text-sm text-gray-600">24 x $25</p>
+                </div>
+                <Trophy className="h-12 w-12 text-yellow-500" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {currentWeekMatchups.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-bold mb-4 flex items-center">
+              <Clock className="mr-2 text-red-500" />
+              {currentGPWeek ? `Group Play Week ${currentGPWeek} - Live Matchups` : `${phase} - Live Matchups`}
+            </h2>
+            
+            {currentGPWeek ? (
+              <div className="space-y-6">
+                {Object.entries(matchupsByGroup).sort().map(([group, matchups]) => (
+                  <div key={group}>
+                    <h3 className="text-xl font-bold mb-3 text-purple-600">Group {group}</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {matchups.map((matchup, i) => renderMatchupCard(matchup, i, false))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {currentWeekMatchups.map((matchup, i) => renderMatchupCard(matchup, i, true))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center">
+              <Trophy className="mr-2 text-yellow-500" size={24} />
+              Top 4 Teams by Record
+            </h2>
+            <div className="space-y-3">
+              {allStandings.map((team, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl font-bold text-gray-400">#{idx + 1}</span>
+                    <div>
+                      <p className="font-bold text-gray-800">{getTeamName(team.col1)}</p>
+                      <p className="text-sm text-gray-600">{getTeamOwner(team.col1)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-blue-600">{team.col2}-{team.col3}</p>
+                    <p className="text-sm text-gray-500">{formatScore(team.col4)} pts</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {closestMatchup && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-bold mb-3 text-orange-600">🔥 Closest Matchup</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{getTeamName(closestMatchup.col6)}</span>
+                    <span className="text-xl font-bold">{formatScore(closestMatchup.col8)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{getTeamName(closestMatchup.col7)}</span>
+                    <span className="text-xl font-bold">{formatScore(closestMatchup.col9)}</span>
+                  </div>
+                  <p className="text-sm text-gray-500 text-center pt-2">
+                    Decided by {formatScore(smallestDiff)} points
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {biggestBlowout && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-bold mb-3 text-red-600">💥 Biggest Blowout</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{getTeamName(biggestBlowout.col6)}</span>
+                    <span className="text-xl font-bold">{formatScore(biggestBlowout.col8)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{getTeamName(biggestBlowout.col7)}</span>
+                    <span className="text-xl font-bold">{formatScore(biggestBlowout.col9)}</span>
+                  </div>
+                  <p className="text-sm text-gray-500 text-center pt-2">
+                    Margin of {formatScore(largestDiff)} points
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {hotStreak && (
+            <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg shadow p-6 border-2 border-green-300">
+              <h3 className="text-lg font-bold mb-2 text-green-700">🔥 Hot Streak</h3>
+              <p className="text-2xl font-bold text-gray-800">{getTeamName(hotStreak[0])}</p>
+              <p className="text-sm text-gray-600 mb-2">{getTeamOwner(hotStreak[0])}</p>
+              <p className="text-3xl font-bold text-green-600">{hotStreak[1].wins} Wins</p>
+              <p className="text-sm text-gray-600">in a row</p>
+            </div>
+          )}
+
+          {coldStreak && (
+            <div className="bg-gradient-to-br from-red-50 to-rose-100 rounded-lg shadow p-6 border-2 border-red-300">
+              <h3 className="text-lg font-bold mb-2 text-red-700">❄️ Cold Streak</h3>
+              <p className="text-2xl font-bold text-gray-800">{getTeamName(coldStreak[0])}</p>
+              <p className="text-sm text-gray-600 mb-2">{getTeamOwner(coldStreak[0])}</p>
+              <p className="text-3xl font-bold text-red-600">{coldStreak[1].losses} Losses</p>
+              <p className="text-sm text-gray-600">in a row</p>
+            </div>
+          )}
+
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg shadow p-6 border-2 border-blue-300">
+            <h3 className="text-lg font-bold mb-2 text-blue-700">📊 Tournament Average</h3>
+            <p className="text-sm text-gray-600 mb-2">Points per game</p>
+            <p className="text-4xl font-bold text-blue-600">{formatScore(avgPoints)}</p>
+            <p className="text-sm text-gray-600 mt-2">across {totalGames} games</p>
           </div>
         </div>
       </div>
