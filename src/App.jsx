@@ -856,6 +856,161 @@ const CommissionersCup = () => {
     );
   };
 
+  const Rules = () => {
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
+          <h1 className="text-4xl font-bold mb-2">Tournament Rules & Format</h1>
+          <p className="text-xl opacity-90">Commissioner's Cup 2024</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-bold text-blue-600 mb-4">Overview</h2>
+          <p className="text-gray-700 mb-4">
+            The Commissioner's Cup is a yearly tournament that involves all teams across the Big Dynasty Leagues. 
+            This is a separate competition from normal league play and does not impact records, standings, or post 
+            season outcomes of the standard league format. The competition is tracked externally from the MFL league 
+            management site.
+          </p>
+          <p className="text-gray-700">
+            A separate trophy and cash prize will be awarded for this tournament. The tournament format follows a 
+            world cup style with round robin group play to determine seeding for a 16 team single elimination bracket.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-bold text-blue-600 mb-4">Tournament Timeline</h2>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded">
+              <span className="font-bold text-blue-600 min-w-[100px]">Week 8:</span>
+              <span className="text-gray-700">After completion of week eight, teams will be drawn and seeded for group play</span>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded">
+              <span className="font-bold text-blue-600 min-w-[100px]">Weeks 9-13:</span>
+              <span className="text-gray-700">Round robin group play (5 weeks)</span>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded">
+              <span className="font-bold text-blue-600 min-w-[100px]">Week 14:</span>
+              <span className="text-gray-700">Sweet 16 - Single Elimination Round</span>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded">
+              <span className="font-bold text-blue-600 min-w-[100px]">Week 15:</span>
+              <span className="text-gray-700">Elite 8 - Single Elimination Round</span>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded">
+              <span className="font-bold text-blue-600 min-w-[100px]">Week 16:</span>
+              <span className="text-gray-700">Final 4 - Single Elimination Round</span>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded border-2 border-yellow-400">
+              <span className="font-bold text-yellow-700 min-w-[100px]">Week 17:</span>
+              <span className="text-gray-700 font-semibold">Championship Game 🏆</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-bold text-blue-600 mb-4">Group Draw & Seeding</h2>
+          <p className="text-gray-700 mb-4">
+            Teams are divided into groups based on their current all-play record in their respective league. 
+            Tie breaker for same all play records goes to most points scored season to date.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-blue-100">
+                  <th className="border border-gray-300 p-3 text-left">Tier</th>
+                  <th className="border border-gray-300 p-3 text-left">Criteria</th>
+                  <th className="border border-gray-300 p-3 text-center">Teams per League</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 p-3 font-semibold">Tier 1</td>
+                  <td className="border border-gray-300 p-3">Top 4 All Play</td>
+                  <td className="border border-gray-300 p-3 text-center">4 ADL + 4 BDL</td>
+                </tr>
+                <tr className="bg-gray-50">
+                  <td className="border border-gray-300 p-3 font-semibold">Tier 2</td>
+                  <td className="border border-gray-300 p-3">Ranks 5-8 All Play</td>
+                  <td className="border border-gray-300 p-3 text-center">4 ADL + 4 BDL</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 p-3 font-semibold">Tier 3</td>
+                  <td className="border border-gray-300 p-3">Ranks 9-12 All Play</td>
+                  <td className="border border-gray-300 p-3 text-center">4 ADL + 4 BDL</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-gray-700 mt-4">
+            Each group (A, B, C, D) will have 6 teams with 3 teams from each league. Seeds 1-2 are drawn from Tier 1, 
+            Seeds 3-4 from Tier 2, and Seeds 5-6 from Tier 3.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-bold text-blue-600 mb-4">Round Robin Group Play</h2>
+          <p className="text-gray-700 mb-4">
+            During round robin group play, each team will play all teams in their group once (one matchup per week for five weeks).
+          </p>
+          <p className="text-gray-700 mb-4 font-semibold">Tiebreakers for round robin games:</p>
+          <ol className="list-decimal list-inside space-y-2 text-gray-700 ml-4">
+            <li>Most bench points</li>
+            <li>Coin flip by commissioner (higher seed heads, lower seed tails)</li>
+          </ol>
+          <p className="text-gray-700 mt-4">
+            The top 4 teams from each group (based on win/loss record) advance to the 16-team elimination bracket. 
+            Tie breaker for tied records goes to most points scored in group play.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-bold text-blue-600 mb-4">Elimination Bracket</h2>
+          <p className="text-gray-700 mb-4">
+            The top 4 teams from each group advance to a single-elimination bracket. Teams must win to advance.
+          </p>
+          <p className="text-gray-700 mb-4 font-semibold">Tiebreakers for bracket games:</p>
+          <ol className="list-decimal list-inside space-y-2 text-gray-700 ml-4">
+            <li>Most bench points</li>
+            <li>Coin flip by commissioner (higher seed heads, lower seed tails)</li>
+          </ol>
+        </div>
+
+        <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-lg shadow p-6 border-2 border-green-300">
+          <h2 className="text-2xl font-bold text-green-700 mb-4">💰 Prize Structure</h2>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 bg-white rounded">
+              <span className="font-semibold text-gray-700">Entry Fee (per team):</span>
+              <span className="text-2xl font-bold text-green-600">$25</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-white rounded">
+              <span className="font-semibold text-gray-700">Total Prize Pool (24 teams):</span>
+              <span className="text-2xl font-bold text-green-600">$600</span>
+            </div>
+            <div className="border-t-2 border-green-300 my-3"></div>
+            <div className="flex justify-between items-center p-4 bg-yellow-100 rounded border-2 border-yellow-400">
+              <span className="font-bold text-gray-800">🏆 Champion (60%):</span>
+              <span className="text-3xl font-bold text-yellow-700">$360</span>
+            </div>
+            <div className="flex justify-between items-center p-4 bg-gray-100 rounded">
+              <span className="font-bold text-gray-800">🥈 Runner-Up (40%):</span>
+              <span className="text-2xl font-bold text-gray-600">$240</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 rounded-lg p-6 border-l-4 border-blue-600">
+          <h3 className="text-lg font-bold text-blue-900 mb-2">Important Notes</h3>
+          <ul className="list-disc list-inside space-y-2 text-gray-700">
+            <li>Teams set ONE lineup each week that serves for both league play and CC tournament play</li>
+            <li>The Commissioner is responsible for collecting fees and coordinating payouts</li>
+            <li>The winner reigns over both leagues with bragging rights until dethroned by the next champion</li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -883,7 +1038,8 @@ const CommissionersCup = () => {
                 { id: 'matchups', label: 'Matchups', icon: Users },
                 { id: 'bracket', label: 'Bracket', icon: Target },
                 { id: 'teams', label: 'Teams', icon: Users },
-                { id: 'history', label: 'History', icon: Trophy }
+                { id: 'history', label: 'History', icon: Trophy },
+                { id: 'rules', label: 'Rules', icon: Target }
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -908,6 +1064,7 @@ const CommissionersCup = () => {
         {activeTab === 'bracket' && <Bracket />}
         {activeTab === 'teams' && <Teams />}
         {activeTab === 'history' && <History />}
+        {activeTab === 'rules' && <Rules />}
         
         {lastUpdate && (
           <div className="mt-8 text-center text-sm text-gray-500">
