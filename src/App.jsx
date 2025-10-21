@@ -306,7 +306,48 @@ const CommissionersCup = () => {
   };
 
   const Bracket = () => {
-    return <div className="text-center text-gray-600">Bracket coming soon...</div>;
+    const rounds = {
+      'Sweet 16': data.bracketMatchups.filter(m => toNumber(m.col0) === 1),
+      'Elite 8': data.bracketMatchups.filter(m => toNumber(m.col0) === 2),
+      'Final 4': data.bracketMatchups.filter(m => toNumber(m.col0) === 3),
+      'Championship': data.bracketMatchups.filter(m => toNumber(m.col0) === 4)
+    };
+
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold mb-6">Elimination Bracket</h1>
+        
+        <div className="bg-white rounded-lg shadow p-6 overflow-x-auto">
+          <div className="flex gap-8" style={{ minWidth: 'max-content' }}>
+            {Object.entries(rounds).map(([roundName, matches]) => {
+              if (matches.length === 0) return null;
+              return (
+                <div key={roundName} className="flex-1" style={{ minWidth: '250px' }}>
+                  <h3 className="text-xl font-bold mb-4 text-center text-purple-600">{roundName}</h3>
+                  <div className="space-y-6">
+                    {matches.map((match, idx) => (
+                      <div key={idx} className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                        <div className={`p-3 flex justify-between items-center ${match.col10 === match.col6 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                          <span className="text-sm text-gray-600">{match.col4}</span>
+                          <span className="flex-1 mx-2">{getTeamName(match.col6)}</span>
+                          <span className="font-bold">{match.col8 ? formatScore(match.col8) : '-'}</span>
+                        </div>
+                        <div className="border-t-2"></div>
+                        <div className={`p-3 flex justify-between items-center ${match.col10 === match.col7 ? 'bg-green-100 font-bold' : 'bg-gray-50'}`}>
+                          <span className="text-sm text-gray-600">{match.col5}</span>
+                          <span className="flex-1 mx-2">{getTeamName(match.col7)}</span>
+                          <span className="font-bold">{match.col9 ? formatScore(match.col9) : '-'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const Teams = () => {
